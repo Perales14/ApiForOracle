@@ -7,6 +7,9 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cors({ origin: true })); // permite cualquier frontend, solo para pruebas
+const { spawn } = require('child_process');
+
+const DEPLOY_SECRET = process.env.DEPLOY_SECRET;
 
 // Configurar AWS con variables de entorno
 AWS.config.update({
@@ -38,5 +41,33 @@ app.post('/generate-presigned', async (req, res) => {
   }
 });
 
+app.post('/deploy', express.json(), (req, res) => {
+  const token = req.headers['x-deploy-token'];
+  if (!token || token !== DEPLOY_SECRET) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+
+  // Ruta absoluta del script
+  const script = '/home/ubuntu/scriptgit/deploy.sh';
+
+  // Lanzar en detached para que siga corriendo aun si este proceso muere
+  const child = spawn(script, [], {
+    detached: true,
+    stdio: 'ignore',
+    env: process.env,
+    shell: true
+  });
+
+  // desapegarlo del proceso padre
+  child.unref();
+
+  // responder inmediatamente: deploy en background
+  return res.json({ ok: 'deploy started' });
+});
+
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`API escuchando en puerto ${PORT}`));
+// app.listen(PORT, () => console.log(`API escuchando en puerto ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`API escuchando en puerto ${PORT}`));
+
+
