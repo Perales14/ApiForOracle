@@ -18,17 +18,29 @@ AWS.config.update({
   region: process.env.AWS_REGION || 'us-east-1'
 });
 
-// Función para obtener commit actual
+// const { execSync } = require('child_process');
+
 function getGitVersion() {
   try {
-    // return execSync('git rev-parse --short HEAD', { cwd: __dirname })
-    return execSync('git rev-parse --short HEAD', { cwd: '/home/ubuntu/ApiForOracle' })
-      .toString()
-      .trim();
+    return spawn('/home/ubuntu/scriptgit/getversion.sh', { encoding: 'utf-8' }).trim();
   } catch (e) {
+    console.error('Error obteniendo versión git:', e);
     return 'unknown';
   }
 }
+
+
+// Función para obtener commit actual
+// function getGitVersion() {
+//   try {
+//     // return execSync('git rev-parse --short HEAD', { cwd: __dirname })
+//     return execSync('git rev-parse --short HEAD', { cwd: '/home/ubuntu/ApiForOracle' })
+//       .toString()
+//       .trim();
+//   } catch (e) {
+//     return 'unknown';
+//   }
+// }
 
 const s3 = new AWS.S3();
 
