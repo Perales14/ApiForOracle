@@ -18,11 +18,28 @@ AWS.config.update({
   region: process.env.AWS_REGION || 'us-east-1'
 });
 
+// Función para obtener commit actual
+function getGitVersion() {
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: __dirname })
+      .toString()
+      .trim();
+  } catch (e) {
+    return 'unknown';
+  }
+}
+
 const s3 = new AWS.S3();
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date(), version:1 });
+  const version = getGitVersion();
+  res.status(200).json({ status: 'ok', timestamp: new Date(), version });
 });
+
+// app.get('/health', (req, res) => {
+//   res.status(200).json({ status: 'ok', timestamp: new Date(), version:1 });
+// });
+
 
 
 app.post('/generate-presigned', async (req, res) => {
@@ -54,6 +71,10 @@ app.post('/deploy', express.json(), (req, res) => {
 
   // Ruta absoluta del script
   const script = '/home/ubuntu/scriptgit/deploy.sh';
+  
+  const versionBefore = getGitVersion();
+  console.log(`Deploy started, current commit: ${versionBefore}`);
+
 
   // Lanzar en detached para que siga corriendo aun si este proceso muere
   const child = spawn(script, [], {
@@ -67,7 +88,7 @@ app.post('/deploy', express.json(), (req, res) => {
   child.unref();
 
   // responder inmediatamente: deploy en background
-  return res.json({ ok: 'deploy started' });
+  return res.json({ ok: 'deploy started', versionBefore });
 });
 
 
