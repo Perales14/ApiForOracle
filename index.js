@@ -7,7 +7,7 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cors({ origin: true })); // permite cualquier frontend, solo para pruebas
-const { spawn } = require('child_process');
+const { spawn , execSync} = require('child_process');
 
 const DEPLOY_SECRET = process.env.DEPLOY_SECRET;
 
@@ -18,13 +18,11 @@ AWS.config.update({
   region: process.env.AWS_REGION || 'us-east-1'
 });
 
-// const { execSync } = require('child_process');
-
 function getGitVersion() {
     const script = '/home/ubuntu/scriptgit/getversion.sh';
 
   try {
-    return spawn('/home/ubuntu/scriptgit/getversion.sh', { encoding: 'utf-8' });
+    return execSync(script, { encoding: 'utf-8' }).trim();
   } catch (e) {
     console.error('Error obteniendo versión git:', e);
     return 'unknown';
@@ -32,17 +30,6 @@ function getGitVersion() {
 }
 
 
-// Función para obtener commit actual
-// function getGitVersion() {
-//   try {
-//     // return execSync('git rev-parse --short HEAD', { cwd: __dirname })
-//     return execSync('git rev-parse --short HEAD', { cwd: '/home/ubuntu/ApiForOracle' })
-//       .toString()
-//       .trim();
-//   } catch (e) {
-//     return 'unknown';
-//   }
-// }
 
 const s3 = new AWS.S3();
 
