@@ -20,6 +20,11 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
+
 app.post('/generate-presigned', async (req, res) => {
   const { filename, contentType } = req.body;
   if (!filename || !contentType) return res.status(400).json({ error: 'filename y contentType requeridos' });
