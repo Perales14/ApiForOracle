@@ -21,7 +21,8 @@ AWS.config.update({
 // Función para obtener commit actual
 function getGitVersion() {
   try {
-    return execSync('git rev-parse --short HEAD', { cwd: __dirname })
+    // return execSync('git rev-parse --short HEAD', { cwd: __dirname })
+    return execSync('git rev-parse --short HEAD', { cwd: '/home/ubuntu/ApiForOracle' })
       .toString()
       .trim();
   } catch (e) {
