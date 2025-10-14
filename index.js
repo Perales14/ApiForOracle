@@ -21,7 +21,7 @@ AWS.config.update({
 const s3 = new AWS.S3();
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
+  res.status(200).json({ status: 'ok', timestamp: new Date(), version:1 });
 });
 
 
