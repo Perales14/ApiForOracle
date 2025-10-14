@@ -21,7 +21,16 @@ AWS.config.update({
 // const { execSync } = require('child_process');
 
 function getGitVersion() {
+    const script = '/home/ubuntu/scriptgit/getversion.sh';
+
   try {
+    const child = spawn(script, [], {
+    detached: true,
+    stdio: 'ignore',
+    env: process.env,
+    shell: true
+    });
+    console.log(child);
     return spawn('/home/ubuntu/scriptgit/getversion.sh', { encoding: 'utf-8' }).trim();
   } catch (e) {
     console.error('Error obteniendo versión git:', e);
