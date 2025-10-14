@@ -24,23 +24,7 @@ function getGitVersion() {
     const script = '/home/ubuntu/scriptgit/getversion.sh';
 
   try {
-    const child = spawn(script, [], {
-    // detached: true,
-    // stdio: 'ignore',
-    // env: process.env,
-    // shell: true,
-    encoding: 'utf-8' 
-    });
-    const child2 = spawn(script, {
-    // detached: true,
-    // stdio: 'ignore',
-    // env: process.env,
-    // shell: true,
-    encoding: 'utf-8' 
-    });
-    console.log(child);
-    console.log(child2);
-    return spawn('/home/ubuntu/scriptgit/getversion.sh', { encoding: 'utf-8' }).trim();
+    return spawn('/home/ubuntu/scriptgit/getversion.sh', { encoding: 'utf-8' });
   } catch (e) {
     console.error('Error obteniendo versión git:', e);
     return 'unknown';
