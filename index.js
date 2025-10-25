@@ -1,13 +1,13 @@
-const express = require('express');
-const AWS = require('aws-sdk');
-const helmet = require('helmet');
-const cors = require('cors');
+const express = require("express");
+const AWS = require("aws-sdk");
+const helmet = require("helmet");
+const cors = require("cors");
 
 const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cors({ origin: true })); // permite cualquier frontend, solo para pruebas
-const { spawn , execSync} = require('child_process');
+const { spawn, execSync } = require("child_process");
 
 const DEPLOY_SECRET = process.env.DEPLOY_SECRET;
 
@@ -15,87 +15,119 @@ const DEPLOY_SECRET = process.env.DEPLOY_SECRET;
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION || 'us-east-1'
+  region: process.env.AWS_REGION || "us-east-1",
 });
 
 function getGitVersion() {
-    const script = '/home/ubuntu/scriptgit/getversion.sh';
+  const script = "/home/ubuntu/scriptgit/getversion.sh";
 
   try {
-    return execSync(script, { encoding: 'utf-8' }).trim();
+    return execSync(script, { encoding: "utf-8" }).trim();
   } catch (e) {
-    console.error('Error obteniendo versión git:', e);
-    return 'unknown';
+    console.error("Error obteniendo versión git:", e);
+    return "unknown";
   }
 }
 
-
-
 const s3 = new AWS.S3();
 
-app.get('/health', (req, res) => {
+app.get("/health", (req, res) => {
   const version = getGitVersion();
-  res.status(200).json({ status: 'ok', timestamp: new Date(), version });
+  res.status(200).json({ status: "ok", timestamp: new Date(), version });
 });
 
 // app.get('/health', (req, res) => {
 //   res.status(200).json({ status: 'ok', timestamp: new Date(), version:1 });
 // });
+app.get("/puerto", (req, res) => {
+  try {
+    // const token = req.header('x-api-key');
+    // if (!token || token !== SECRET) {
+    //   return res.status(401).json({ ok:false, msg: 'unauthorized' });
+    // }
 
+    let port = parseInt(req.query.port, 10);
+    if (!port || port < 1 || port > 65535) port = 22; // default 22 si no viene o inválido
 
+    // Ruta al script dentro de tu repo (ajusta si es otra)
+    const scriptPath = path.resolve(__dirname, "scripts", "change_ssh_port.sh");
 
-app.post('/generate-presigned', async (req, res) => {
+    // Ejecutar script pasando el puerto como argumento
+    execFile(
+      scriptPath,
+      [String(port)],
+      { timeout: 2 * 60 * 1000 },
+      (err, stdout, stderr) => {
+        if (err) {
+          // devolver stdout/stderr para debugging
+          return res
+            .status(500)
+            .json({ ok: false, err: err.message, stdout, stderr });
+        }
+        return res.json({
+          ok: true,
+          msg: `puerto cambiado a ${port}`,
+          stdout,
+          stderr,
+        });
+      }
+    );
+  } catch (e) {
+    return res.status(500).json({ ok: false, err: e.message });
+  }
+});
+
+app.post("/generate-presigned", async (req, res) => {
   const { filename, contentType } = req.body;
-  if (!filename || !contentType) return res.status(400).json({ error: 'filename y contentType requeridos' });
+  if (!filename || !contentType)
+    return res.status(400).json({ error: "filename y contentType requeridos" });
 
   const params = {
     Bucket: process.env.S3_BUCKET,
     Key: filename,
     Expires: 60, // segundos
     ContentType: contentType,
-    ACL: 'private'
+    ACL: "private",
   };
 
   try {
-    const url = await s3.getSignedUrlPromise('putObject', params);
+    const url = await s3.getSignedUrlPromise("putObject", params);
     res.json({ url });
   } catch (err) {
-    console.error('Error generando presigned:', err);
-    res.status(500).json({ error: 'error generando URL' });
+    console.error("Error generando presigned:", err);
+    res.status(500).json({ error: "error generando URL" });
   }
 });
 
-app.post('/deploy', express.json(), (req, res) => {
-  const token = req.headers['x-deploy-token'];
+app.post("/deploy", express.json(), (req, res) => {
+  const token = req.headers["x-deploy-token"];
   if (!token || token !== DEPLOY_SECRET) {
-    return res.status(401).json({ error: 'unauthorized' });
+    return res.status(401).json({ error: "unauthorized" });
   }
 
   // Ruta absoluta del script
-  const script = '/home/ubuntu/scriptgit/deploy.sh';
-  
+  const script = "/home/ubuntu/scriptgit/deploy.sh";
+
   const versionBefore = getGitVersion();
   console.log(`Deploy started, current commit: ${versionBefore}`);
-
 
   // Lanzar en detached para que siga corriendo aun si este proceso muere
   const child = spawn(script, [], {
     detached: true,
-    stdio: 'ignore',
+    stdio: "ignore",
     env: process.env,
-    shell: true
+    shell: true,
   });
 
   // desapegarlo del proceso padre
   child.unref();
 
   // responder inmediatamente: deploy en background
-  return res.json({ ok: 'deploy started', versionBefore });
+  return res.json({ ok: "deploy started", versionBefore });
 });
-
 
 const PORT = process.env.PORT || 3000;
 // app.listen(PORT, () => console.log(`API escuchando en puerto ${PORT}`));
-app.listen(PORT, '0.0.0.0', () => console.log(`API escuchando en puerto ${PORT}`));
-
-
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`API escuchando en puerto ${PORT}`)
+);
