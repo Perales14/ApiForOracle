@@ -33,7 +33,7 @@ const s3 = new AWS.S3();
 
 app.get("/health", (req, res) => {
   const version = getGitVersion();
-  res.status(200).json({ status: "ok", timestamp: new Date(), version });
+  res.status(200).json({ status: "ok1", timestamp: new Date(), version });
 });
 
 // app.get('/health', (req, res) => {
