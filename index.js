@@ -125,6 +125,29 @@ app.post("/deploy", express.json(), (req, res) => {
   // responder inmediatamente: deploy en background
   return res.json({ ok: "deploy started", versionBefore });
 });
+app.get("/reset-ssh", (req, res) => {
+  try {
+    const stdout = execSync(
+      `
+      sudo sed -i 's/^Port .*/Port 22/' /etc/ssh/sshd_config && \
+      sudo systemctl restart ssh
+    `,
+      { encoding: "utf-8" }
+    );
+
+    res.json({
+      ok: true,
+      msg: "Puerto SSH restablecido a 22 y servicio reiniciado",
+      stdout,
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      msg: "Error restableciendo SSH",
+      err: err.message,
+    });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 // app.listen(PORT, () => console.log(`API escuchando en puerto ${PORT}`));
